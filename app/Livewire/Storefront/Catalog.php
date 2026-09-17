@@ -1,0 +1,5 @@
+<?php
+namespace App\Livewire\Storefront;
+use App\Models\Category; use App\Models\Product; use Livewire\Attributes\Layout; use Livewire\Component; use Livewire\WithPagination;
+#[Layout('layouts.store')]
+class Catalog extends Component { use WithPagination; public string $search=''; public string $category=''; public function updatedSearch(){ $this->resetPage(); } public function add(int $id){ abort_unless(auth()->check(),403); $item=\App\Models\CartItem::firstOrNew(['user_id'=>auth()->id(),'product_id'=>$id]); $item->quantity=($item->exists?$item->quantity:0)+1; $item->save(); $this->dispatch('cart-updated'); $this->dispatch('toast', type: 'success', message: 'Produk ditambahkan ke keranjang.'); } public function render(){ return view('livewire.storefront.catalog',['categories'=>Category::all(),'products'=>Product::query()->where('is_active',true)->with('category')->when($this->search,fn($q)=>$q->where('name','like',"%{$this->search}%"))->when($this->category,fn($q)=>$q->whereHas('category',fn($c)=>$c->where('slug',$this->category)))->paginate(9)]); } }
